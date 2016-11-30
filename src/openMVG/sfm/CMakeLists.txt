@@ -31,7 +31,7 @@ target_link_libraries(
 set_target_properties(openMVG_sfm PROPERTIES SOVERSION ${OPENMVG_VERSION_MAJOR} VERSION "${OPENMVG_VERSION_MAJOR}.${OPENMVG_VERSION_MINOR}")
 
 if(OpenMVG_USE_ALEMBIC)
-  target_link_libraries( openMVG_sfm ${ABC_LIBRARIES})
+  target_link_libraries( openMVG_sfm Alembic::Alembic) #PRIVATE
 endif(OpenMVG_USE_ALEMBIC)
 
 install(TARGETS openMVG_sfm DESTINATION lib EXPORT openMVG-targets)
@@ -44,7 +44,7 @@ UNIT_TEST(openMVG sfm_data_utils
   "openMVG_features;openMVG_multiview;openMVG_system;openMVG_sfm;stlplus")
 
 if(OpenMVG_USE_ALEMBIC)
-  UNIT_TEST(openMVG AlembicImporter "openMVG_sfm;${ABC_LIBRARIES}")
+  UNIT_TEST(openMVG AlembicImporter "openMVG_sfm") #PRIVATE
 endif(OpenMVG_USE_ALEMBIC)
 
 add_subdirectory(pipelines)

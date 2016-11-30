@@ -60,7 +60,8 @@ CMake Options
 * OpenMVG_USE_ALEMBIC (default OFF)
   Build with Alembic file format support.
   `-DAlembic_DIR=/path/to/alembic/install/lib/cmake/Alembic/` (where AlembicConfig.cmake can be found)
-  With old Alembic versions (<1.6), you need to set many variables: ALEMBIC_ROOT, ALEMBIC_HDF5_ROOT, ALEMBIC_ILMBASE_ROOT, ALEMBIC_OPENEXR_ROOT.
+  Alembic exports the `AlembicConfig.cmake` only starting from v1.6, even though due to a bug it does not work until v1.7. We recommend to build the 1.7 version from github to avoid any issue.
+  With older Alembic versions (<1.6), you need to set many variables: ALEMBIC_ROOT, ALEMBIC_HDF5_ROOT, ALEMBIC_ILMBASE_ROOT, ALEMBIC_OPENEXR_ROOT.
 
 * OpenMVG_USE_OPENCV (default: OFF): Build with openCV
   `-DOpenCV_DIR=/path/to/opencv/install/share/OpenCV/` (where OpenCVConfig.cmake can be found)

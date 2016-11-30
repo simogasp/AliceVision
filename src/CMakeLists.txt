@@ -451,15 +451,14 @@ ENDIF(OpenMVG_USE_BOOST)
 # - optional, it allows to use the classes to export data in alembic format
 # ==============================================================================
 IF(OpenMVG_USE_ALEMBIC)
-  FIND_PACKAGE(Alembic)
-  IF(ALEMBIC_FOUND)
-    MESSAGE(STATUS "Alembic found")
-    include_directories(${ABC_INCLUDE_DIR})
+  FIND_PACKAGE(Alembic 1.6.0)
+  IF(Alembic_FOUND)
+    MESSAGE(STATUS "Alembic version ${Alembic_VERSION} found")
     add_definitions(-DHAVE_ALEMBIC)
   ELSE()
     MESSAGE(STATUS "Alembic not found -- disabling I/O exporter")
     UPDATE_CACHE_VARIABLE(OpenMVG_USE_ALEMBIC OFF)
-  ENDIF(ALEMBIC_FOUND)
+  ENDIF(Alembic_FOUND)
 ENDIF(OpenMVG_USE_ALEMBIC)
 
 # ==============================================================================

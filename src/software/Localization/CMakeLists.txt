@@ -12,7 +12,7 @@ IF(OpenMVG_USE_BOOST)
                     vlsift 
                     ${BOOST_LIBRARIES})
     if(OpenMVG_USE_ALEMBIC)
-        target_link_libraries(openMVG_main_cameraLocalizer openMVG_sfm ${ABC_LIBRARIES})
+        target_link_libraries(openMVG_main_cameraLocalizer openMVG_sfm Alembic::Alembic) #PRIVATE
     endif()
     if(OpenMVG_USE_CCTAG)
         target_link_libraries(openMVG_main_cameraLocalizer CCTag::CCTag)
@@ -53,7 +53,7 @@ IF(OpenMVG_USE_BOOST)
                             vlsift 
                             ${Boost_LIBRARIES})
     if(OpenMVG_USE_ALEMBIC)
-        target_link_libraries(openMVG_main_rigLocalizer openMVG_sfm ${ABC_LIBRARIES})
+        target_link_libraries(openMVG_main_rigLocalizer openMVG_sfm Alembic::Alembic) #PRIVATE
     endif()
     if(OpenMVG_USE_CCTAG)
         target_link_libraries(openMVG_main_rigLocalizer CCTag::CCTag)
