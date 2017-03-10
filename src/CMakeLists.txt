@@ -75,6 +75,7 @@ IF (WIN32)
   ADD_DEFINITIONS(-DNOMINMAX)
   IF (MSVC)
     ADD_DEFINITIONS(/bigobj)
+    ADD_COMPILE_OPTIONS(/MP)
   ENDIF (MSVC)
 ENDIF (WIN32)
 
@@ -435,6 +436,9 @@ IF(OpenMVG_USE_BOOST)
      if(BOOST_NO_CXX11)
        add_definitions(-DBOOST_NO_CXX11_SCOPED_ENUMS)
      endif(BOOST_NO_CXX11)
+     if(WIN32)
+	add_definitions(-DBOOST_ALL_DYN_LINK -DBOOST_ALL_NO_LIB)
+     endif(WIN32)
      include_directories(${Boost_INCLUDE_DIRS})
      link_directories(${Boost_LIBRARY_DIRS})
      add_definitions(${Boost_DEFINITIONS})
@@ -739,4 +743,12 @@ CONFIGURE_FILE("${CMAKE_SOURCE_DIR}/cmakeFindModules/OpenMVGConfig.cmake.in"
 
 INSTALL(FILES "${CMAKE_CURRENT_BINARY_DIR}/OpenMVGConfig.cmake"
         DESTINATION share/openMVG/cmake)
+
+########### Add uninstall target ###############
+CONFIGURE_FILE(
+  "${CMAKE_CURRENT_SOURCE_DIR}/cmakeFindModules/cmake_uninstall.cmake.in"
+  "${CMAKE_CURRENT_BINARY_DIR}/cmakeFindModules/cmake_uninstall.cmake"
+  IMMEDIATE @ONLY)
+ADD_CUSTOM_TARGET(uninstall
+  "${CMAKE_COMMAND}" -P "${CMAKE_CURRENT_BINARY_DIR}/cmakeFindModules/cmake_uninstall.cmake")
 

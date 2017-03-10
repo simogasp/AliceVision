@@ -27,7 +27,7 @@
 #include <chrono>
 #include <memory>
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 #include <openMVG/sfm/AlembicExporter.hpp>
 #endif // HAVE_ALEMBIC
 
@@ -138,59 +138,95 @@ bool checkRobustEstimator(robust::EROBUST_ESTIMATOR e, double &value)
 
 int main(int argc, char** argv)
 {
-  std::string calibFile;                    //< the calibration file
-  std::string sfmFilePath;                  //< the OpenMVG .json data file
-  std::string descriptorsFolder;            //< the OpenMVG .json data file
-  std::string mediaFilepath;                //< the media file to localize
-  //< the preset for the feature extractor
+  /// the calibration file
+  std::string calibFile;
+  /// the OpenMVG .json data file
+  std::string sfmFilePath;
+  /// the folder containing the descriptors
+  std::string descriptorsFolder;
+  /// the media file to localize
+  std::string mediaFilepath;
+ 
+  /// the preset for the feature extractor
   features::EDESCRIBER_PRESET featurePreset = features::EDESCRIBER_PRESET::NORMAL_PRESET;     
-  //< the preset for the feature extractor
+  /// the preset for the feature extractor
   DescriberType descriptorType = DescriberType::SIFT;        
-  //< the estimator to use for resection
+  /// the estimator to use for resection
   robust::EROBUST_ESTIMATOR resectionEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the estimator to use for matching
+  /// the estimator to use for matching
   robust::EROBUST_ESTIMATOR matchingEstimator = robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC;        
-  //< the possible choices for the estimators as strings
+  /// the possible choices for the estimators as strings
   const std::string str_estimatorChoices = ""+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_ACRANSAC)
                                           +","+robust::EROBUST_ESTIMATOR_enumToString(robust::EROBUST_ESTIMATOR::ROBUST_ESTIMATOR_LORANSAC);
   bool refineIntrinsics = false;
-  double resectionErrorMax = 4.0;  //< the maximum error allowed for resection
-  double matchingErrorMax = 4.0;   //< the maximum error allowed for image matching with geometric validation
+  /// the maximum reprojection error allowed for resection
+  double resectionErrorMax = 4.0;  
+  /// the maximum reprojection error allowed for image matching with geometric validation
+  double matchingErrorMax = 4.0;   
   
   // voctree parameters
   std::string algostring = "AllResults";
-  std::size_t numResults = 4;       //< number of documents to search when querying the voctree
-  std::size_t maxResults = 10;      //< maximum number of matching documents to retain
+  /// number of similar images to search when querying the voctree
+  std::size_t numResults = 4;
+  /// maximum number of successfully matched similar images
+  std::size_t maxResults = 10;      
   std::size_t numCommonViews = 3;
-  std::string vocTreeFilepath;      //< the vocabulary tree file
-  std::string weightsFilepath;      //< the vocabulary tree weights file
+  /// the vocabulary tree file
+  std::string vocTreeFilepath;
+  /// the vocabulary tree weights file
+  std::string weightsFilepath;  
+  /// enable the matching with the last N frame of the sequence
+  bool useFrameBufferMatching = true;
+  /// enable/disable the robust matching (geometric validation) when matching query image
+  /// and databases images
+  bool robustMatching = true;
   
-#if HAVE_ALEMBIC
-  std::string exportFile = "trackedcameras.abc"; //!< the export file
+#ifdef HAVE_ALEMBIC
+  /// the export file
+  std::string exportFile = "trackedcameras.abc";
 #else
-  std::string exportFile = "localizationResult.json"; //!< the export file
+  /// the export file
+  std::string exportFile = "localizationResult.json";
 #endif
 #ifdef HAVE_CCTAG
   // parameters for cctag localizer
   std::size_t nNearestKeyFrames = 5;   
 #endif
-  bool globalBundle = false;              ///< If !refineIntrinsics it can run a final global budndle to refine the scene
-  bool noDistortion = false;              ///< It does not count the distortion
-  bool noBArefineIntrinsics = false;      ///< It does not refine intrinsics during BA
+  // parameters for the final bundle adjustment
+  /// If !refineIntrinsics it can run a final global bundle to refine the scene
+  bool globalBundle = false;
+  /// It does not count the distortion
+  bool noDistortion = false;
+  /// It does not refine intrinsics during BA
+  bool noBArefineIntrinsics = false;
+  /// remove the points that does not have a minimum visibility over the sequence
+  /// ie that are seen at least by minPointVisibility frames of the sequence
   std::size_t minPointVisibility = 0;
   
-  std::string visualDebug = "";           ///< whether to save visual debug info
-  bool useVoctreeLocalizer = true;        ///< whether to use the voctreeLocalizer or cctagLocalizer
-  bool useSIFT_CCTAG = false;             ///< whether to use SIFT_CCTAG
-  
-  bool useFrameBufferMatching = true;     ///< enable the matching with the last N frame of the sequence
+  /// whether to save visual debug info
+  std::string visualDebug = "";
+  /// whether to use the voctreeLocalizer or cctagLocalizer
+  bool useVoctreeLocalizer = true;
+  /// whether to use SIFT_CCTAG
+  bool useSIFT_CCTAG = false;
 
-  po::options_description desc(
-      "This program takes as input a media (image, image sequence, video) and a database (voctree, 3D structure data) \n"
+  po::options_description allParams(
+      "This program takes as input a media (image, image sequence, video) and a database (vocabulary tree, 3D scene data) \n"
       "and returns for each frame a pose estimation for the camera.");
+
+  po::options_description inputParams("Required input parameters");
   
-  desc.add_options()
-      ("help,h", "Print this message")
+  inputParams.add_options()
+      ("sfmdata", po::value<std::string>(&sfmFilePath)->required(), 
+          "The sfm_data.json kind of file generated by OpenMVG.")
+      ("descriptorPath", po::value<std::string>(&descriptorsFolder)->required(), 
+          "Folder containing the descriptors for all the images (ie the *.desc.)")
+      ("mediafile", po::value<std::string>(&mediaFilepath)->required(), 
+          "The folder path or the filename for the media to track");
+  
+  po::options_description commonParams(
+      "Common optional parameters for the localizer");
+  commonParams.add_options()
       ("descriptors", po::value<DescriberType>(&descriptorType)->default_value(descriptorType), 
           "Type of descriptors to use {SIFT"
 #ifdef HAVE_CCTAG
@@ -208,18 +244,15 @@ int main(int argc, char** argv)
           "{"+str_estimatorChoices+"}").c_str())
       ("calibration", po::value<std::string>(&calibFile)/*->required( )*/, 
           "Calibration file")
-      ("sfmdata", po::value<std::string>(&sfmFilePath)->required(), 
-          "The sfm_data.json kind of file generated by OpenMVG.")
-      ("descriptorPath", po::value<std::string>(&descriptorsFolder)->required(), 
-          "Folder containing the .desc.")
-      ("mediafile", po::value<std::string>(&mediaFilepath)->required(), 
-          "The folder path or the filename for the media to track")
       ("refineIntrinsics", po::bool_switch(&refineIntrinsics), 
           "Enable/Disable camera intrinsics refinement for each localized image")
       ("reprojectionError", po::value<double>(&resectionErrorMax)->default_value(resectionErrorMax), 
           "Maximum reprojection error (in pixels) allowed for resectioning. If set "
-          "to 0 it lets the ACRansac select an optimal value.")
+          "to 0 it lets the ACRansac select an optimal value.");
+  
 // voctree specific options
+  po::options_description voctreeParams("Parameters specific for the vocabulary tree-based localizer");
+  voctreeParams.add_options()
       ("nbImageMatch", po::value<std::size_t>(&numResults)->default_value(numResults), 
           "[voctree] Number of images to retrieve in database")
       ("maxResults", po::value<std::size_t>(&maxResults)->default_value(maxResults), 
@@ -228,24 +261,31 @@ int main(int argc, char** argv)
       ("commonviews", po::value<std::size_t>(&numCommonViews)->default_value(numCommonViews), 
           "[voctree] Number of minimum images in which a point must be seen to "
           "be used in cluster tracking")
-      ("voctree", po::value<std::string>(&vocTreeFilepath)->required(), 
+      ("voctree", po::value<std::string>(&vocTreeFilepath), 
           "[voctree] Filename for the vocabulary tree")
       ("voctreeWeights", po::value<std::string>(&weightsFilepath), 
           "[voctree] Filename for the vocabulary tree weights")
       ("algorithm", po::value<std::string>(&algostring)->default_value(algostring), 
-          "[voctree] Algorithm type: FirstBest, BestResult, AllResults, Cluster" )
+          "[voctree] Algorithm type: FirstBest, AllResults" )
       ("matchingError", po::value<double>(&matchingErrorMax)->default_value(matchingErrorMax), 
           "[voctree] Maximum matching error (in pixels) allowed for image matching with "
           "geometric verification. If set to 0 it lets the ACRansac select "
           "an optimal value.")
       ("useFrameBufferMatching", po::bool_switch(&useFrameBufferMatching), 
           "[voctree] Enable/Disable the matching with the last N frame of the sequence")
+      ("robustMatching", po::value<bool>(&robustMatching)->default_value(robustMatching), 
+          "[voctree] Enable/Disable the robust matching between query and database images, "
+          "all putative matches will be considered.")
 // cctag specific options
 #ifdef HAVE_CCTAG
       ("nNearestKeyFrames", po::value<size_t>(&nNearestKeyFrames)->default_value(nNearestKeyFrames), 
           "[cctag] Number of images to retrieve in the database")
 #endif
+  ;
+  
 // final bundle adjustment options
+  po::options_description bundleParams("Parameters specific for final (optional) bundle adjustment optimization of the sequence");
+  bundleParams.add_options()
       ("globalBundle", po::bool_switch(&globalBundle), 
           "[bundle adjustment] If --refineIntrinsics is not set, this option "
           "allows to run a final global budndle adjustment to refine the scene")
@@ -256,11 +296,16 @@ int main(int argc, char** argv)
           "[bundle adjustment] It does not refine intrinsics during BA")
       ("minPointVisibility", po::value<size_t>(&minPointVisibility)->default_value(minPointVisibility), 
           "[bundle adjustment] Minimum number of observation that a point must "
-          "have in order to be considered for bundle adjustment")
+          "have in order to be considered for bundle adjustment");
+  
+// output options
+  po::options_description outputParams("Options for the output of the localizer");
+  outputParams.add_options()
+      ("help,h", "Print this message")
       ("visualDebug", po::value<std::string>(&visualDebug), 
           "If a directory is provided it enables visual debug and saves all the "
           "debugging info in that directory")
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       ("output", po::value<std::string>(&exportFile)->default_value(exportFile), 
           "Filename for the SfM_Data export file (where camera poses will be stored). "
           "Default : trackedcameras.abc. It will also save the localization "
@@ -271,16 +316,18 @@ int main(int argc, char** argv)
           "results. Default : localizationResult.json.")
 #endif
       ;
+  
+  allParams.add(inputParams).add(outputParams).add(commonParams).add(voctreeParams).add(bundleParams);
 
   po::variables_map vm;
 
   try
   {
-    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::store(po::parse_command_line(argc, argv, allParams), vm);
 
     if(vm.count("help") || (argc == 1))
     {
-      OPENMVG_COUT(desc);
+      OPENMVG_COUT(allParams);
       return EXIT_SUCCESS;
     }
 
@@ -289,13 +336,13 @@ int main(int argc, char** argv)
   catch(boost::program_options::required_option& e)
   {
     OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << desc);
+    OPENMVG_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   catch(boost::program_options::error& e)
   {
     OPENMVG_CERR("ERROR: " << e.what() << std::endl);
-    OPENMVG_COUT("Usage:\n\n" << desc);
+    OPENMVG_COUT("Usage:\n\n" << allParams);
     return EXIT_FAILURE;
   }
   
@@ -342,6 +389,7 @@ int main(int argc, char** argv)
       OPENMVG_COUT("\talgorithm: " << algostring);
       OPENMVG_COUT("\tmatchingError: " << matchingErrorMax);
       OPENMVG_COUT("\tuseFrameBufferMatching: " << useFrameBufferMatching);
+      OPENMVG_COUT("\trobustMatching: " << robustMatching);
     }
 #ifdef HAVE_CCTAG 
     else
@@ -401,6 +449,7 @@ int main(int argc, char** argv)
     tmpParam->_ccTagUseCuda = false;
     tmpParam->_matchingError = matchingErrorMax;
     tmpParam->_useFrameBufferMatching = useFrameBufferMatching;
+    tmpParam->_useRobustMatching = robustMatching;
   }
 #ifdef HAVE_CCTAG
   else
@@ -440,9 +489,9 @@ int main(int argc, char** argv)
     return EXIT_FAILURE;
   }
   
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
   // init alembic exporter
-  dataio::AlembicExporter exporter( exportFile );
+  sfm::AlembicExporter exporter( exportFile );
   exporter.addPoints(localizer->getSfMData().GetLandmarks());
   exporter.initAnimatedCamera("camera");
 #endif
@@ -489,7 +538,7 @@ int main(int argc, char** argv)
     // save data
     if(localizationResult.isValid())
     {
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       exporter.addCameraKeyframe(localizationResult.getPose(), &queryIntrinsics, currentImgName, frameCounter, frameCounter);
 #endif
       
@@ -499,7 +548,7 @@ int main(int argc, char** argv)
     else
     {
       OPENMVG_CERR("Unable to localize frame " << frameCounter);
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       exporter.jumpKeyframe(currentImgName);
 #endif
     }
@@ -536,9 +585,9 @@ int main(int argc, char** argv)
     }
     else
     {
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
       // now copy back in a new abc with the same name file and BUNDLE appended at the end
-      dataio::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
+      sfm::AlembicExporter exporterBA( basename+".BUNDLE.abc" );
       exporterBA.initAnimatedCamera("camera");
       std::size_t idx = 0;
       for(const localization::LocalizationResult &res : vec_localizationResults)

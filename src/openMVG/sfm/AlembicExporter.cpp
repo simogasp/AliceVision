@@ -5,7 +5,7 @@
  * Created on September 24, 2015, 3:57 PM
  */
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 
 #include "AlembicExporter.hpp"
 
@@ -15,8 +15,10 @@
 #include "openMVG/sfm/sfm_view_metadata.hpp"
 #include "openMVG/version.hpp"
 
+#include <numeric>
+
 namespace openMVG {
-namespace dataio {
+namespace sfm {
 
 
 using namespace Alembic::Abc;
@@ -39,9 +41,9 @@ struct AlembicExporter::DataImpl
     auto userProps = _mvgRoot.getProperties();
     OUInt32ArrayProperty propAbcVersion(userProps, "mvg_ABC_version");
     OUInt32ArrayProperty propOpenMVGVersion(userProps, "mvg_openMVG_version");
-    const std::vector<uint32_t> abcVersion = {1, 0};
+    const std::vector<::uint32_t> abcVersion = {1, 0};
     propAbcVersion.set(abcVersion);
-    const std::vector<uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
+    const std::vector<::uint32_t> openMVGVersion = {OPENMVG_VERSION_MAJOR, OPENMVG_VERSION_MINOR, OPENMVG_VERSION_REVISION};
     propOpenMVGVersion.set(openMVGVersion);
   }
   
@@ -90,7 +92,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   }
 
   std::vector<Alembic::Util::uint64_t> ids(positions.size());
-  iota(begin(ids), end(ids), 0);
+  std::iota(begin(ids), end(ids), 0);
 
   OPoints partsOut(_data->_mvgPointCloud, "particleShape1");
   OPointsSchema &pSchema = partsOut.getSchema();
@@ -107,7 +109,7 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
   if(withVisibility)
   {
     OCompoundProperty userProps = pSchema.getUserProperties();
-    std::vector<uint32_t> visibilitySize;
+    std::vector<::uint32_t> visibilitySize;
     visibilitySize.reserve(positions.size());
     for(const auto landmark : landmarks)
     {
@@ -115,9 +117,9 @@ void AlembicExporter::addPoints(const sfm::Landmarks &landmarks, bool withVisibi
     }
     std::size_t nbObservations = std::accumulate(visibilitySize.begin(), visibilitySize.end(), 0);
     
-    // Use std::vector<uint32_t> and std::vector<float> instead of std::vector<V2i> and std::vector<V2f>
+    // Use std::vector<::uint32_t> and std::vector<float> instead of std::vector<V2i> and std::vector<V2f>
     // Because Maya don't import them correctly
-    std::vector<uint32_t> visibilityIds;
+    std::vector<::uint32_t> visibilityIds;
     visibilityIds.reserve(nbObservations*2);
     std::vector<float>featPos2d;
     featPos2d.reserve(nbObservations*2);
@@ -226,7 +228,7 @@ void AlembicExporter::appendCamera(const std::string &cameraName,
   
   // Add sensor width (largest image side) in pixels as custom property
   OUInt32ArrayProperty propSensorSize_pix(userProps, "mvg_sensorSizePix");
-  std::vector<uint32_t> sensorSize_pix = {uint32_t(sensorWidth_pix), uint32_t(sensorHeight_pix)};
+  std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
   propSensorSize_pix.set(sensorSize_pix);
 
   // Add image path as custom property
@@ -356,7 +358,7 @@ void AlembicExporter::addCameraKeyframe(const geometry::Pose3 &pose,
   camSample.setVerticalAperture(vaperture_cm);
   
   // Add sensor width (largest image side) in pixels as custom property
-  std::vector<uint32_t> sensorSize_pix = {uint32_t(sensorWidth_pix), uint32_t(sensorHeight_pix)};
+  std::vector<::uint32_t> sensorSize_pix = {::uint32_t(sensorWidth_pix), ::uint32_t(sensorHeight_pix)};
   _data->_mpropSensorSize_pix.set(sensorSize_pix);
   
   // Set custom attributes
@@ -447,7 +449,7 @@ std::string AlembicExporter::getFilename()
   return _data->_archive.getName();
 }
 
-} //namespace dataio
+} //namespace sfm
 } //namespace openMVG
 
 #endif //HAVE_ALEMBIC

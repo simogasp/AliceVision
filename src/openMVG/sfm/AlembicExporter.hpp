@@ -1,4 +1,4 @@
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
 
 #pragma once
 
@@ -12,7 +12,7 @@
 #include <string>
 
 namespace openMVG {
-namespace dataio {
+namespace sfm {
 
 class AlembicExporter
 {
@@ -100,7 +100,7 @@ private:
 
 };
 
-} // namespace data_io
+} // namespace sfm
 } // namespace openMVG
 
 #endif // HAVE_ALEMBIC

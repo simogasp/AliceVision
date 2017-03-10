@@ -4,7 +4,7 @@
 // License, v. 2.0. If a copy of the MPL was not distributed with this
 // file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
-#if HAVE_ALEMBIC
+#ifdef HAVE_ALEMBIC
         
 #pragma once
 
@@ -14,7 +14,7 @@
 #include <string>
 
 namespace openMVG {
-namespace dataio {
+namespace sfm {
 
 class AlembicImporter 
 {
@@ -30,7 +30,7 @@ private:
   std::unique_ptr<DataImpl> _objImpl;
 };
 
-} // namespace mockup
+} // namespace sfm
 } // namespace openMVG
 
 #endif // WITH_ALEMBIC
