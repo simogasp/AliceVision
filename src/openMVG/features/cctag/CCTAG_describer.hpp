@@ -25,9 +25,9 @@ public:
 
   bool Set_configuration_preset(EDESCRIBER_PRESET preset);
 
-  void Set_use_cuda(bool);
+  void setUseCuda(bool) override;
 
-  void setCudaPipe(int pipe) { _cudaPipe = pipe; }
+  void setCudaPipe(int pipe) override { _cudaPipe = pipe; }
 
   /**
   @brief Detect regions on the image and compute their attributes (description)
