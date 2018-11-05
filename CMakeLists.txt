@@ -14,6 +14,7 @@ option(AV_BUILD_POPSIFT "Enable building an embedded PopSift" ON)
 option(AV_BUILD_OPENGV "Enable building an embedded OpenGV" ON)
 option(AV_BUILD_LAPACK "Enable building an embedded Lapack" ON)
 option(AV_BUILD_SUITESPARSE "Enable building an embedded SuiteSparse" ON)
+option(AV_BUILD_TBB "Enable building an embedded tbb" OFF)
 
 option(AV_USE_CUDA "Enable CUDA" ON)
 
@@ -74,6 +75,7 @@ message(STATUS "AV_BUILD_POPSIFT: ${AV_BUILD_POPSIFT}")
 message(STATUS "AV_BUILD_OPENGV: ${AV_BUILD_OPENGV}")
 message(STATUS "AV_BUILD_LAPACK: ${AV_BUILD_LAPACK}")
 message(STATUS "AV_BUILD_SUITESPARSE: ${AV_BUILD_SUITESPARSE}")
+message(STATUS "AV_BUILD_TBB: ${AV_BUILD_TBB}")
 message(STATUS "CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}")
 message(STATUS "DEPS_CMAKE_BUILD_TYPE: ${DEPS_CMAKE_BUILD_TYPE}")
 message(STATUS "CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
@@ -157,6 +159,7 @@ else()
 endif()
 
 # Add Tbb
+if(AV_BUILD_TBB)
 set(TBB_TARGET tbb)
 ExternalProject_Add(${TBB_TARGET}
        URL https://github.com/01org/tbb/archive/2018_U5.tar.gz
@@ -165,11 +168,12 @@ ExternalProject_Add(${TBB_TARGET}
        BUILD_ALWAYS 0
        SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/tbb
        BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/tbb
-       INSTALL_DIR ${BUILD_DIR}/tbb_build
+       INSTALL_DIR ${CMAKE_INSTALL_PREFIX}
        CONFIGURE_COMMAND ""
        BUILD_COMMAND PREFIX=<INSTALL_DIR> make PREFIX=<INSTALL_DIR>
        INSTALL_COMMAND mkdir <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR} && echo "cp <BINARY_DIR>/build/linux_*_release/*.so <INSTALL_DIR>/${CMAKE_INSTALL_LIBDIR}" > tbb_so_files.sh && sh tbb_so_files.sh && cp -r "<BINARY_DIR>/include" "<INSTALL_DIR>"
        )
+endif()
 
 # Add Eigen
 set(EIGEN_TARGET eigen)
