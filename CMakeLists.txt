@@ -45,6 +45,22 @@ if(CMAKE_BUILD_TYPE MATCHES Release)
     set(CMAKE_INSTALL_DO_STRIP TRUE)
 endif()
 
+
+# ==============================================================================
+# Enable cmake UNIT TEST framework
+# ==============================================================================
+if(ALICEVISION_BUILD_TESTS)
+    enable_testing()
+endif()
+
+if(WIN32)
+    set(SCRIPT_EXTENSION bat)
+else()
+    set(SCRIPT_EXTENSION sh)
+endif()
+
+if(ALICEVISION_BUILD_DEPENDENCIES)
+
 message(STATUS "----------------------------------------")
 message(STATUS "ALICEVISION_BUILD_DEPENDENCIES: ${ALICEVISION_BUILD_DEPENDENCIES}")
 message(STATUS "ALICEVISION_BUILD_TESTS: ${ALICEVISION_BUILD_TESTS}")
@@ -65,21 +81,6 @@ message(STATUS "CMAKE_INSTALL_PREFIX: ${CMAKE_INSTALL_PREFIX}")
 message(STATUS "CMAKE_INSTALL_RPATH: ${CMAKE_INSTALL_RPATH}")
 message(STATUS "CMAKE_INSTALL_DO_STRIP: ${CMAKE_INSTALL_DO_STRIP}")
 message(STATUS "----------------------------------------")
-
-# ==============================================================================
-# Enable cmake UNIT TEST framework
-# ==============================================================================
-if(ALICEVISION_BUILD_TESTS)
-  enable_testing()
-endif()
-
-if(WIN32)
-  set(SCRIPT_EXTENSION bat)
-else()
-  set(SCRIPT_EXTENSION sh)
-endif()
-
-if(ALICEVISION_BUILD_DEPENDENCIES)
 
 # ==============================================================================
 # Use CMake ExternalProject to build all dependencies
